@@ -1,0 +1,19 @@
+{
+  "addons": {
+    "quick-copy-pdf@huaisure": {
+      "updates": [
+        {
+          "version": "1.0.0",
+          "update_link": "https://github.com/Huaisure/zotero-quick-copy-pdf/releases/download/v1.0.0/quick-copy-pdf-1.0.0.xpi",
+          "update_hash": "sha256:c7cdcda2cbb11db3d98adaa00877a38bca2eafcae3de921f29dcdaa001913c82",
+          "applications": {
+            "zotero": {
+              "strict_min_version": "10.0.7",
+              "strict_max_version": "10.0.*"
+            }
+          }
+        }
+      ]
+    }
+  }
+}
