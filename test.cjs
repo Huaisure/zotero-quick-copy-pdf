@@ -9,7 +9,7 @@ test("install manifest contains Zotero's required metadata", () => {
   assert.equal(manifest.manifest_version, 2);
   assert.equal(zotero.id, "quick-copy-pdf@huaisure");
   assert.equal(new URL(zotero.update_url).protocol, "https:");
-  assert.equal(zotero.strict_min_version, "10.0.7");
+  assert.equal(zotero.strict_min_version, "8.0");
   assert.equal(zotero.strict_max_version, "10.0.*");
 });
 
@@ -57,7 +57,7 @@ function setup() {
 const pdf = (path = "/tmp/paper.pdf") => ({
   isRegularItem: () => false,
   isPDFAttachment: () => true,
-  attachmentFilename: path ? path.split("/").pop() : "missing.pdf",
+  attachmentFilename: path ? path.split(/[\\/]/).pop() : "missing.pdf",
   getField: () => "PDF",
   getFilePathAsync: async () => path
 });
@@ -176,4 +176,15 @@ test("failed menu registration cleans up the earlier menu", () => {
   assert.throws(() => sandbox.startup({ id: "test" }), /无法注册/);
   assert.deepEqual(state.removed, ["first"]);
   assert.equal(sandbox.CopyOriginalPDF.active, false);
+});
+
+
+test("Windows drive and UNC paths reach the native clipboard unchanged", async () => {
+  for (const path of [String.raw`C:\Users\Reader\论文 资料\正文.pdf`,
+    String.raw`\\server\papers\补充 材料.pdf`]) {
+    const { state, api } = setup();
+    await api.copy([pdf(path)], {});
+    assert.equal(state.clipboard.flavor, "application/x-moz-file");
+    assert.equal(state.clipboard.file.path, path);
+  }
 });

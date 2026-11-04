@@ -1,0 +1,31 @@
+name: Test
+on:
+  push:
+    paths: ['bootstrap.js', 'manifest.json', 'test.cjs', 'build.py', 'tests/**', '.github/workflows/test.yml']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        zotero: ['8.0', '9.0', '10.0.7']
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unit tests and package
+        run: |
+          node --test test.cjs
+          python build.py
+      - name: Download official Zotero
+        shell: pwsh
+        run: |
+          Invoke-WebRequest 'https://download.zotero.org/client/release/${{ matrix.zotero }}/Zotero-${{ matrix.zotero }}_x64_setup.exe' -OutFile "$env:RUNNER_TEMP/zotero-setup.exe"
+          7z x "$env:RUNNER_TEMP/zotero-setup.exe" "-o$env:RUNNER_TEMP/zotero" -y
+          if ($LASTEXITCODE -ne 0) { throw 'Could not extract Zotero' }
+      - name: Native menus and Windows file clipboard
+        shell: pwsh
+        run: python tests/runtime.py "$env:RUNNER_TEMP/zotero/core/zotero.exe"
