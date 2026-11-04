@@ -17,6 +17,7 @@ files = ("manifest.json", "bootstrap.js")
 with zipfile.ZipFile(destination, "w", compression=zipfile.ZIP_DEFLATED) as archive:
     for name in files:
         entry = zipfile.ZipInfo(name, date_time=(2026, 1, 1, 0, 0, 0))
+        entry.create_system = 3
         entry.compress_type = zipfile.ZIP_DEFLATED
         entry.external_attr = 0o644 << 16
         archive.writestr(entry, (root / name).read_bytes())

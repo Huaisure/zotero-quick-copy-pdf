@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
 import time
 import zipfile
@@ -13,6 +14,7 @@ import zipfile
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("app", type=Path, help="Zotero executable")
 args = parser.parse_args()
+sys.stdout.reconfigure(encoding="utf-8")
 repo = Path(__file__).resolve().parent.parent
 manifest = json.loads((repo / "manifest.json").read_text(encoding="utf-8"))
 root = Path(tempfile.mkdtemp(prefix="quick-copy-pdf-test-"))
@@ -54,7 +56,8 @@ prefs = {
 ), encoding="utf-8")
 with (root / "runtime.log").open("w", encoding="utf-8") as log:
     process = subprocess.Popen([str(args.app.resolve()), "--new-instance", "--profile",
-                                str(profile), "-purgecaches", "-ZoteroDebugText"],
+                                str(profile), "-purgecaches", "-ZoteroDebugText"]
+                               + (["-wait-for-browser"] if os.name == "nt" else []),
                                stdout=log, stderr=subprocess.STDOUT)
     try:
         result_file = root / "integration-result.json"
@@ -90,7 +93,11 @@ with (root / "runtime.log").open("w", encoding="utf-8") as log:
         print((root / "runtime.log").read_text(encoding="utf-8", errors="replace")[-16000:])
         raise
     finally:
-        process.terminate()
+        if os.name == "nt":
+            subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        else:
+            process.terminate()
         try:
             process.wait(timeout=15)
         except subprocess.TimeoutExpired:

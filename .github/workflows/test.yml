@@ -1,7 +1,7 @@
 name: Test
 on:
   push:
-    paths: ['bootstrap.js', 'manifest.json', 'test.cjs', 'build.py', 'tests/**', '.github/workflows/test.yml']
+    paths: ['bootstrap.js', 'manifest.json', 'test.cjs', 'build.py', 'tests/**', '.gitattributes', '.github/workflows/test.yml']
   pull_request:
   workflow_dispatch:
 permissions:
