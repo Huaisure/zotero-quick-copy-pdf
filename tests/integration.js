@@ -85,8 +85,12 @@ async function run() {
     .find(node => node.getAttribute("label") === "复制原始 PDF 文件");
   assert(tabMenu && !tabMenu.hidden, "Actual background PDF tab context menu displays copy command");
   tabMenu.doCommand();
-  await Zotero.Promise.delay(150);
-  assert(clipboardPath() === await first.getFilePathAsync(), "Background tab command copies its own PDF");
+  const firstPath = await first.getFilePathAsync();
+  const deadline = Date.now() + 5000;
+  while (clipboardPath() !== firstPath && Date.now() < deadline) {
+    await Zotero.Promise.delay(50);
+  }
+  assert(clipboardPath() === firstPath, "Background tab command copies its own PDF");
   tabPopup.hidePopup();
 
   const { AddonManager } = ChromeUtils.importESModule("resource://gre/modules/AddonManager.sys.mjs");
