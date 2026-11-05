@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Quick Copy PDF",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "author": "Huaisure",
   "description": "在文献条目和 PDF 标签页的右键菜单中复制原始 PDF 文件。",
   "applications": {

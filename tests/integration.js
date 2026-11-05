@@ -97,5 +97,33 @@ async function run() {
   await addon.enable();
   assert(getOptions("main/library/item").length === 1 && getOptions("main/tab").length === 1,
     "Re-enable restores exactly one copy of each menu");
-  return { version: Zotero.version, passed, clipboardPath: clipboardPath() };
+  const otherParent = new Zotero.Item("journalArticle");
+  otherParent.setField("title", "Second batch paper");
+  await otherParent.saveTx();
+  const third = await Zotero.Attachments.linkFromFile({
+    file: PathUtils.join(root, "研究 '#😀.pdf"), parentItemID: otherParent.id
+  });
+  await win.ZoteroPane.selectItems([parent.id, otherParent.id]);
+  await win.ZoteroPane.buildItemContextMenu();
+  libraryPopup.dispatchEvent(new win.Event("popupshowing"));
+  const batchMenu = Array.from(libraryPopup.querySelectorAll("menuitem"))
+    .find(node => node.getAttribute("label") === "批量复制原始 PDF 文件");
+  assert(batchMenu && !batchMenu.hidden, "Actual multi-selection menu displays batch copy command");
+
+  Services.obs.addObserver(choose, "select-dialog-loaded");
+  try { await invoke("main/library/item", [parent, otherParent, chosen]); }
+  finally { Services.obs.removeObserver(choose, "select-dialog-loaded"); }
+  const expectedClipboardPaths = [await chosen.getFilePathAsync(), await third.getFilePathAsync()];
+  assert(clipboardPath() === expectedClipboardPaths[0], "Batch clipboard exposes the chosen first PDF");
+  await invoke("main/library/item", [third]);
+  assert(clipboardPath() === expectedClipboardPaths[1], "Single copy replaces a previous native batch");
+  Services.obs.addObserver(choose, "select-dialog-loaded");
+  try { await invoke("main/library/item", [parent, otherParent, chosen]); }
+  finally { Services.obs.removeObserver(choose, "select-dialog-loaded"); }
+  assert(clipboardPath() === expectedClipboardPaths[0], "Batch copy replaces a previous single copy");
+  Services.obs.addObserver(cancel, "select-dialog-loaded");
+  try { await invoke("main/library/item", [third, parent]); }
+  finally { Services.obs.removeObserver(cancel, "select-dialog-loaded"); }
+  assert(clipboardPath() === expectedClipboardPaths[0], "Canceling a later choice preserves batch clipboard");
+  return { version: Zotero.version, passed, expectedClipboardPaths };
 }

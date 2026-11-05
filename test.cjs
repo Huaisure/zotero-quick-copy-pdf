@@ -24,7 +24,7 @@ function setup() {
   const sandbox = {
     Zotero: {
       Items: { get: ids => ids },
-      File: { pathToFile: path => { file.path = path; return file; } },
+      File: { pathToFile: path => ({ ...file, path, equals(other) { return this.path === other.path; } }) },
       MenuManager: {
         registerMenu(menu) { state.menus.push(menu); return menu.menuID; },
         unregisterMenu(id) { state.removed.push(id); }
@@ -61,7 +61,7 @@ const pdf = (path = "/tmp/paper.pdf") => ({
   getField: () => "PDF",
   getFilePathAsync: async () => path
 });
-const parent = attachments => ({ isRegularItem: () => true, getAttachments: () => attachments });
+const parent = attachments => ({ isRegularItem: () => true, getAttachments: () => attachments, getField: () => "Test paper" });
 
 test("registers both official menu targets and unregisters on shutdown", () => {
   const { state, sandbox } = setup();
@@ -96,10 +96,10 @@ test("cancelling leaves the clipboard untouched", async () => {
   assert.equal(state.clipboard, null);
 });
 
-test("no PDFs, deleted PDFs, notes and multiple selected items are ignored", async () => {
+test("no PDFs, deleted PDFs and notes are ignored", async () => {
   const { state, api } = setup();
   const note = { isRegularItem: () => false, isPDFAttachment: () => false };
-  for (const items of [[], [parent([])], [note], [pdf(), pdf()],
+  for (const items of [[], [parent([])], [note], [null], [{ ...pdf(), deleted: true }],
     [parent([{ ...pdf(), deleted: true }, note])]]) {
     assert.equal(api.getPDFs(items).length, 0);
     await api.copy(items, {});
@@ -187,4 +187,69 @@ test("Windows drive and UNC paths reach the native clipboard unchanged", async (
     assert.equal(state.clipboard.flavor, "application/x-moz-file");
     assert.equal(state.clipboard.file.path, path);
   }
+});
+
+
+test("batch collects one PDF per item, skips non-PDFs and removes duplicate files", async () => {
+  const { state, api } = setup();
+  const writes = [];
+  api.copyFiles = files => writes.push(files.map(file => file.path));
+  state.choice = 1;
+  await api.copy([parent([pdf("/tmp/a.pdf")]), parent([]),
+    parent([pdf("/tmp/b.pdf"), pdf("/tmp/选中.pdf")]), pdf("/tmp/a.pdf")], {});
+  assert.deepEqual(writes.map(paths => Array.from(paths)), [["/tmp/a.pdf", "/tmp/选中.pdf"]]);
+  assert.equal(state.prompts, 1);
+  assert.equal(state.clipboard, null);
+});
+
+test("canceling a later batch choice preserves the previous clipboard", async () => {
+  const { state, api } = setup();
+  await api.copy([pdf("/tmp/previous.pdf")], {});
+  const previous = state.clipboard;
+  api.copyFiles = () => assert.fail("must not write a partial batch");
+  state.cancel = true;
+  await api.copy([pdf("/tmp/a.pdf"), parent([pdf(), pdf()])], {});
+  assert.equal(state.clipboard, previous);
+  assert.equal(state.clipboard.file.path, "/tmp/previous.pdf");
+});
+
+test("a missing later batch file preserves the previous clipboard", async () => {
+  const { state, api } = setup();
+  await api.copy([pdf("/tmp/previous.pdf")], {});
+  const previous = state.clipboard;
+  api.copyFiles = () => assert.fail("must not write a partial batch");
+  await assert.rejects(api.copy([pdf("/tmp/a.pdf"), pdf(false)], {}), /不在本机/);
+  assert.equal(state.clipboard, previous);
+  assert.equal(state.clipboard.file.path, "/tmp/previous.pdf");
+});
+
+test("batch reduced to one unique file uses the single-file clipboard", async () => {
+  const { state, api } = setup();
+  api.copyFiles = () => assert.fail("only one file remains");
+  await api.copy([parent([]), pdf(), parent([pdf()])], {});
+  assert.equal(state.clipboard.file.path, "/tmp/paper.pdf");
+});
+
+test("multi-selection menu is visible when any selected item has a PDF", () => {
+  const { state } = setup();
+  const context = {
+    items: [parent([]), pdf()],
+    menuElem: { setAttribute(_name, value) { context.label = value; } },
+    setVisible(value) { context.visible = value; }
+  };
+  state.menus[0].menus[0].onShowing(null, context);
+  assert.equal(context.visible, true);
+  assert.equal(context.label, "批量复制原始 PDF 文件");
+  context.items = [parent([]), parent([])];
+  state.menus[0].menus[0].onShowing(null, context);
+  assert.equal(context.visible, false);
+});
+
+test("disabling while resolving a later batch file prevents all writes", async () => {
+  const { state, api, sandbox } = setup();
+  api.copyFiles = () => assert.fail("must not write after shutdown");
+  const last = pdf();
+  last.getFilePathAsync = async () => { sandbox.shutdown(); return "/tmp/last.pdf"; };
+  await api.copy([pdf("/tmp/first.pdf"), last], {});
+  assert.equal(state.clipboard, null);
 });
