@@ -1,68 +1,78 @@
 # Quick Copy PDF
 
-在 Zotero 的文献条目或顶部 PDF 标签页上右键，直接复制原始 PDF 文件到系统剪贴板。
+English | [简体中文](README-zh.md)
 
 Copy original PDF files from Zotero library items and PDF reader tabs to the system clipboard. When an item has multiple PDFs, choose the attachment to copy.
 
-## 为什么开发这个插件
+**Copy from a PDF reader tab:**
 
-经常需要把一篇论文的 PDF 发给 AI，让它帮忙阅读、解释或讨论内容。原来的流程比较麻烦：先在 Zotero 中找到论文，再定位 PDF 文件，然后复制或拖到 AI 应用里。因此做了这个小插件，把「复制原始 PDF 文件」直接放进文献条目和 PDF 标签页的右键菜单，方便把论文复制给 AI。
+![Copy Original PDF File in the PDF tab context menu](docs/images/pdf-tab-menu.png)
 
-复制后，可以在支持文件粘贴的 AI 应用中直接粘贴；具体是否接受文件粘贴取决于目标应用。
+**Copy from a library item:**
 
-## 安装
+![Copy Original PDF File in the library item context menu](docs/images/library-item-menu.png)
 
-适用版本：**Zotero 8–10（8.0–10.0.x）**，支持 macOS 和 Windows。Zotero 7 及更早版本不在支持范围内。
+## Why I built this
 
-1. 从 [Releases](https://github.com/Huaisure/zotero-quick-copy-pdf/releases/latest) 下载 `quick-copy-pdf-1.1.0.xpi`。不要下载 GitHub 自动生成的 Source code 压缩包作为插件。
-2. 在 Zotero 中打开 **工具 → 插件**。
-3. 点击右上角齿轮，选择 **从文件安装插件…**，打开下载的 `.xpi`。
+I often need to send a paper's PDF to an AI app to help me read, understand, or discuss it. The usual workflow takes too many steps: find the paper in Zotero, locate its PDF on disk, then copy or drag the file into the AI app. I built this small plugin to put a **Copy Original PDF File** command directly in the context menus for library items and PDF tabs, making it easier to share papers with AI.
 
-## 使用
+After copying, paste the file into any AI app that supports pasting files. Whether this works depends on the receiving app.
 
-- **文献库**：右键一个文献条目，点击「复制原始 PDF 文件」。只有一个 PDF 时直接复制；多个 PDF 时弹出文件选择框。
-- **PDF 附件**：也可以直接右键文献下的 PDF 附件，复制该文件。
-- **顶部标签页**：打开 PDF 后，右键它的顶部标签页，点击「复制原始 PDF 文件」。即使该标签页当前未激活，也会复制它对应的 PDF。
-- **粘贴**：macOS 在 Finder 文件夹或支持文件粘贴的应用中按 `⌘V`；Windows 在资源管理器文件夹或支持文件粘贴的应用中按 `Ctrl+V`。
+## Installation
 
-没有 PDF 的条目不会显示此菜单。一次处理一个条目；选择多个文献时不显示菜单。选择框取消后不会改变剪贴板。
+Supports **Zotero 8–10 (8.0–10.0.x)** on macOS and Windows. Zotero 7 and earlier are not supported.
 
-## 原始文件的含义
+1. Download `quick-copy-pdf-1.1.0.xpi` from [Releases](https://github.com/Huaisure/zotero-quick-copy-pdf/releases/latest). The automatically generated Source code archives are not installable plugins.
+2. In Zotero, open **Tools → Plugins**.
+3. Click the gear icon, choose **Install Plugin From File…**, and select the downloaded `.xpi` file.
 
-插件把本地附件文件交给系统剪贴板，保留原文件名和字节内容，不导出、不重写 PDF。仅保存在 Zotero 数据库中的批注不会被嵌入；原 PDF 文件本来就包含的内容会保留。
+## Usage
 
-支持 Zotero 存储的附件和链接到本地文件的附件。未下载或已丢失的 PDF 会提示先下载或重新定位；插件不自动下载附件。仅有网页链接的条目不作为本地 PDF 处理。
+The plugin's menu command and dialogs are currently in Chinese. **复制原始 PDF 文件** means **Copy Original PDF File**.
 
-插件不修改文献元数据，也不上传文献或 PDF。Zotero 可通过本仓库的 `updates.json` 检查插件版本更新。
+- **Library item:** Right-click a paper and select **复制原始 PDF 文件**. A single PDF is copied immediately; if there are multiple PDFs, a dialog lets you choose one.
+- **PDF attachment:** You can also right-click a PDF attachment under a paper to copy that file directly.
+- **Reader tab:** Open a PDF, right-click its tab at the top, and select **复制原始 PDF 文件**. The plugin copies the PDF belonging to that tab, even if the tab is not currently active.
+- **Paste:** On macOS, press `⌘V` in a Finder folder or an app that supports pasting files. On Windows, press `Ctrl+V` in a File Explorer folder or a compatible app.
 
-## 开发与构建
+The command is hidden for items without a PDF and when multiple library items are selected. Canceling the attachment dialog leaves the clipboard unchanged.
 
-运行插件不需要 Node.js、Python 或额外依赖。开发测试需要 Node.js 18+，打包使用 Python 3 标准库。
+## What “original file” means
+
+The plugin places the local attachment file on the system clipboard, preserving its filename and exact bytes. It does not export or rewrite the PDF. Annotations stored only in Zotero's database are not embedded; content already present in the PDF is preserved.
+
+Both Zotero-managed attachments and linked local files are supported. If a PDF has not been downloaded or its file is missing, the plugin asks you to download or locate it first. It does not download attachments automatically. Web links alone are not treated as local PDFs.
+
+The plugin does not modify item metadata or upload papers or PDFs. Zotero can check for plugin updates through this repository's `updates.json`.
+
+## Development and building
+
+Using the plugin requires no Node.js, Python, or additional dependencies. Development tests require Node.js 18+, and packaging uses the Python 3 standard library.
 
 ```sh
 node --test test.cjs
 python3 build.py
 ```
 
-安装包生成到 `dist/quick-copy-pdf-1.1.0.xpi`，同时更新根目录的 `updates.json`（包含安装包 SHA-256）。安装包仅包含 `manifest.json` 和 `bootstrap.js`。
+The build produces `dist/quick-copy-pdf-1.1.0.xpi` and updates `updates.json` in the repository root, including the package's SHA-256 hash. The package contains only `manifest.json` and `bootstrap.js`.
 
-实现使用 Zotero 的 `MenuManager` 官方接口：`main/library/item` 和 `main/tab`。系统剪贴板使用 Mozilla 的 `application/x-moz-file` 文件类型，Windows 由 Mozilla 转换为系统原生 `CF_HDROP` 文件列表，保留中文路径。插件运行无需 PowerShell 或额外程序。
+The plugin uses Zotero's official `MenuManager` API with the `main/library/item` and `main/tab` targets. File copying uses Mozilla's `application/x-moz-file` clipboard format. On Windows, Mozilla converts this to the native `CF_HDROP` file list, preserving Chinese characters in paths. No PowerShell or external program is required to run the plugin.
 
-发布新版本时，修改 `manifest.json` 中的版本号，运行测试和构建，提交生成的 `updates.json`，然后将同一次构建得到的 XPI 上传到对应的 `v版本号` GitHub Release。更新清单的下载链接和文件哈希必须与发布附件一致。
+To publish a new version, update the version in `manifest.json`, run the tests and build, commit the generated `updates.json`, and upload the XPI from that same build to the corresponding `v<version>` GitHub Release. The download URL and file hash in the update manifest must match the release asset.
 
-原生运行测试：构建后运行 `python3 tests/runtime.py /path/to/zotero`（Windows 使用 `python` 并传入 `zotero.exe` 路径）。脚本自动创建临时资料库，只使用仓库内生成的测试 PDF，并会改写系统剪贴板；测试结束后关闭测试实例，临时目录保留供排错。
+For native runtime tests, build first, then run `python3 tests/runtime.py /path/to/zotero` (on Windows, use `python` and the path to `zotero.exe`). The script creates a temporary profile and library, uses only the generated test PDF in this repository, and overwrites the system clipboard. It closes the test instance when finished and keeps the temporary directory for troubleshooting.
 
-## 验证范围
+## Validation coverage
 
-- 14 项自动化测试：菜单注册和清理、单文件复制、多文件选择、取消、空选择、非 PDF、缺失或不可读文件、后台标签页目标、停用期间的异步操作、Windows 盘符和 UNC 路径原样传递及安装清单。
-- macOS 和 Windows x64 均在 Zotero **8.0、9.0、10.0.7** 上完成每个版本 11 项运行时检查：实际加载、两个右键菜单、原生文件剪贴板、多文件选择框和取消、未激活 PDF 标签页的目标、停用和重新启用。
-- Windows 另由独立进程读取系统文件剪贴板，确认中文文件名正确，并复制文件核对 SHA-256。Windows 与 macOS 构建的 XPI 哈希一致。
-- 测试使用生成的 PDF，没有使用个人文献库。
+- 14 automated tests cover menu registration and cleanup, copying a single file, choosing between multiple PDFs, cancellation, empty selections, non-PDF items, missing or unreadable files, background tab targeting, asynchronous operations during shutdown, unchanged Windows drive and UNC paths, and the installation manifest.
+- On both macOS and Windows x64, Zotero **8.0, 9.0, and 10.0.7** each passed 11 runtime checks covering actual plugin loading, both context menus, the native file clipboard, the attachment chooser and cancellation, inactive PDF tab targeting, and disabling and re-enabling the plugin.
+- On Windows, a separate process also read the system file clipboard, verified Chinese filenames, copied the file, and checked its SHA-256 hash. Windows and macOS builds produced identical XPI hashes.
+- Tests used generated PDFs, not a personal library.
 
-Windows 检查在 GitHub 托管的 Windows x64 环境中运行，见 [通过的测试记录](https://github.com/Huaisure/zotero-quick-copy-pdf/actions/runs/41798864293)；没有逐一手动测试 Windows 10/11 资源管理器、网络共享或各 AI、聊天、邮件应用的粘贴行为。Linux 未实测。插件复制的是文件，粘贴目标需要支持文件剪贴板。
+Windows checks ran on GitHub-hosted Windows x64 runners; see the [passing test run](https://github.com/Huaisure/zotero-quick-copy-pdf/actions/runs/41798864293). Pasting into Windows 10/11 File Explorer, network shares, and individual AI, chat, or email apps has not been manually tested across all combinations. Linux has not been tested. The plugin copies a file, so the receiving app must support file clipboard data.
 
-## 参考
+## References
 
-- [Zotero 插件开发](https://www.zotero.org/support/dev/client_coding/plugin_development)
-- [MenuManager 官方说明](https://www.zotero.org/support/dev/zotero_8_for_developers#custom_menu_items)
-- [Zotero 10 开发说明](https://www.zotero.org/support/dev/zotero_10_for_developers)
+- [Zotero plugin development](https://www.zotero.org/support/dev/client_coding/plugin_development)
+- [Official MenuManager documentation](https://www.zotero.org/support/dev/zotero_8_for_developers#custom_menu_items)
+- [Zotero 10 developer notes](https://www.zotero.org/support/dev/zotero_10_for_developers)
